@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pg-deployment
+  namespace: default
+  labels:
+    app: pg-deployment
+spec:
+  selector:
+    matchLabels:
+      app: pg-deployment
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: pg-deployment
+    spec:
+      containers:
+        - name: pg-deployment
+          image: bitnami/postgresql:14
+          env:
+            - name: POSTGRESQL_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: pg-config
+                  key: POSTGRESQL_USERNAME
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: pg-config
+                  key: POSTGRESQL_PASSWORD
+            - name: POSTGRESQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: pg-config
+                  key: POSTGRESQL_DATABASE
+          ports:
+            - containerPort: 5432
+
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pg-svc
+  namespace: default
+spec:
+  selector:
+    app: pg-deployment
+  type: ClusterIP
+  sessionAffinity: None
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+  ports:
+    - name: pg-svc
+      protocol: TCP
+      port: 5432
+      targetPort: 5432
