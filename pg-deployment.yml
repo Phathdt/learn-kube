@@ -22,26 +22,25 @@ spec:
     spec:
       containers:
         - name: pg-deployment
-          image: bitnami/postgresql:14
+          image: postgres:14-alpine
           env:
-            - name: POSTGRESQL_USERNAME
-              valueFrom:
-                configMapKeyRef:
-                  name: pg-config
-                  key: POSTGRESQL_USERNAME
-            - name: POSTGRESQL_PASSWORD
+            - name: PGDATA
+              value: '/var/lib/postgresql/data/pgdata'
+            - name: POSTGRES_PASSWORD
               valueFrom:
                 configMapKeyRef:
                   name: pg-config
                   key: POSTGRESQL_PASSWORD
-            - name: POSTGRESQL_DATABASE
-              valueFrom:
-                configMapKeyRef:
-                  name: pg-config
-                  key: POSTGRESQL_DATABASE
           ports:
             - containerPort: 5432
-
+              name: pg-deployment
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: fileserver-claim
+      volumes:
+        - name: fileserver-claim
+          persistentVolumeClaim:
+            claimName: fileserver-claim
       restartPolicy: Always
 ---
 apiVersion: v1
