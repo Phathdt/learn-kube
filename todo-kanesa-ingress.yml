@@ -1,0 +1,52 @@
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: letsencrypt-kanesa-issuer
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-kanesa-issuer
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kanesa-certificate
+spec:
+  secretName: kanesa-certificate-secret
+  issuerRef:
+    name: letsencrypt-kanesa-issuer
+  dnsNames:
+    - todo.kanesa.xyz
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: todo-kanesa-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    nginx.ingress.kubernetes.io/force-ssl-redirect: 'true'
+    cert-manager.io/issuer: 'letsencrypt-kanesa-issuer'
+spec:
+  tls:
+    - hosts:
+        - todo.kanesa.xyz
+      secretName: kanesa-certificate-secret
+  rules:
+    - host: todo.kanesa.xyz
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app-svc
+                port:
+                  number: 80
+  ingressClassName: nginx
